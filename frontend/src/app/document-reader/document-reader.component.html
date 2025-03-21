@@ -1,5 +1,9 @@
-<div class="reader-container">
-    <h2>{{ filename }}</h2>
-    <pre>{{ content }}</pre>
-  </div>
-  
+<div class="pdf-container">
+  <h2>{{ filename }}</h2>
+  <iframe
+    [src]="pdfSrc"
+    width="100%"
+    height="800px"
+    style="border: none;"
+  ></iframe>
+</div>

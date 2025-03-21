@@ -21,21 +21,27 @@ export class FileUploadComponent {
       this.uploadMessage = 'Please select a file!';
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('file', this.selectedFile);
-
+  
     try {
       const response = await axios.post('http://127.0.0.1:8000/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-
+  
       this.uploadMessage = `Upload successful: ${response.data.filename}`;
+      this.selectedFile = null;
+  
+      const inputEl = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (inputEl) inputEl.value = '';
+  
       this.fileUploaded.emit();
-
+  
     } catch (error) {
       console.error('Upload failed:', error);
       this.uploadMessage = 'Upload failed!';
     }
   }
+  
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import axios from 'axios';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-document-reader',
@@ -9,17 +9,16 @@ import axios from 'axios';
 })
 export class DocumentReaderComponent implements OnInit {
   filename = '';
-  content = '';
+  pdfSrc!: SafeResourceUrl;
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private sanitizer: DomSanitizer
+  ) {}
 
-  async ngOnInit() {
+  ngOnInit() {
     this.filename = this.route.snapshot.paramMap.get('filename') || '';
-    try {
-      const response = await axios.get(`http://127.0.0.1:8000/document/${this.filename}`);
-      this.content = response.data;
-    } catch (error) {
-      this.content = 'Error loading document.';
-    }
+    const rawUrl = `http://127.0.0.1:8000/file/${this.filename}`;
+    this.pdfSrc = this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
   }
 }
