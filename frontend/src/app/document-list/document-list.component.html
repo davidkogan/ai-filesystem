@@ -1,0 +1,11 @@
+<app-file-upload (fileUploaded)="loadDocuments()"></app-file-upload>
+
+<h2>Uploaded Documents</h2>
+
+<p *ngIf="documents.length === 0">No documents found.</p>
+
+<ul>
+  <li *ngFor="let doc of documents">
+    <a [routerLink]="['/read', doc.filename]">{{ doc.filename }}</a> — {{ doc.size_kb }} KB
+  </li>
+</ul>
