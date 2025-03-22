@@ -1,16 +1,51 @@
-<div class="group-detail-container">
-    <h2>Group: {{ groupName }}</h2>
-  
-    <div class="doc-list">
-      <div
-        class="doc-card"
-        *ngFor="let doc of documents"
-        (click)="openDoc(doc.filename)"
+<div class="group-detail-container" *ngIf="currentGroup">
+  <div class="group-header">
+    <div class="group-title">
+      <i class="fas fa-folder"></i>
+      <h1>{{ currentGroup.name }}</h1>
+    </div>
+    <div class="group-stats">
+      {{ currentGroup.documents.length }} document{{ currentGroup.documents.length !== 1 ? 's' : '' }}
+    </div>
+  </div>
+
+  <!-- File Upload Component -->
+  <app-file-upload [groupId]="currentGroup.id"></app-file-upload>
+
+  <!-- Documents List -->
+  <div class="document-section" *ngIf="currentGroup.documents.length > 0">
+    <h2>
+      <i class="fas fa-file-alt"></i>
+      Documents
+    </h2>
+
+    <div class="document-list">
+      <div 
+        class="document-card" 
+        *ngFor="let doc of currentGroup.documents" 
+        (click)="openDocument(doc)"
       >
-        <h4>{{ doc.filename }}</h4>
-        <p>{{ doc.size_kb }} KB</p>
-        <p><small>{{ doc.uploaded_at | date:'short' }}</small></p>
+        <div class="document-icon">
+          <i class="fas fa-file-pdf"></i>
+        </div>
+        <div class="document-info">
+          <h3>{{ doc.filename }}</h3>
+          <div class="document-meta">
+            <span class="document-size">{{ formatFileSize(doc.size_kb) }}</span>
+            <span class="document-date">{{ formatDate(doc.uploaded_at) }}</span>
+          </div>
+        </div>
+        <div class="document-action">
+          <i class="fas fa-chevron-right"></i>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="currentGroup.documents.length === 0">
+    <i class="fas fa-file-upload"></i>
+    <p>No documents yet. Upload your first document to get started!</p>
+  </div>
+</div>
   

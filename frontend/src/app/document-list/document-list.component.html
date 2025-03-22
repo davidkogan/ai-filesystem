@@ -1,14 +1,75 @@
-<app-file-upload (fileUploaded)="loadGroups()"></app-file-upload>
+<div class="page-container">
+  <!-- Create Group Button -->
+  <button class="create-group-btn" (click)="showCreateForm = true" *ngIf="!showCreateForm">
+    <i class="fas fa-plus"></i>
+    Create Group
+  </button>
 
-<h2 style="text-align: center;">Document Groups</h2>
+  <!-- Create Group Form Modal -->
+  <div class="create-group-modal" *ngIf="showCreateForm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-folder-plus"></i>
+          Create Group
+        </h2>
+        <button class="close-btn" (click)="showCreateForm = false">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="group-form">
+        <input
+          type="text"
+          [(ngModel)]="newGroupName"
+          placeholder="Enter group name..."
+          (keyup.enter)="createGroupAndClose()"
+        />
+        <div class="form-actions">
+          <button class="cancel-btn" (click)="showCreateForm = false">Cancel</button>
+          <button 
+            class="create-btn" 
+            (click)="createGroupAndClose()" 
+            [disabled]="!newGroupName?.trim()"
+          >
+            Create Group
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<div class="group-grid">
-  <div
-    class="group-card"
-    *ngFor="let group of groups"
-    [routerLink]="['/group', group.id]"
-  >
-    <h3>{{ group.name }}</h3>
-    <p>{{ group.documents.length }} document{{ group.documents.length !== 1 ? 's' : '' }}</p>
+  <!-- Groups List (Left Side) -->
+  <div class="groups-section">
+    <!-- Groups List -->
+    <div class="group-grid">
+      <a
+        class="group-card"
+        *ngFor="let group of groups"
+        [routerLink]="['/group', group.id]"
+        [class.active]="group.id === activeGroupId"
+      >
+        <div class="group-icon">
+          <i class="fas fa-folder"></i>
+        </div>
+        <div class="group-info">
+          <h3>{{ group.name }}</h3>
+          <p>{{ group.documents ? group.documents.length : 0 }} document{{ group.documents && group.documents.length !== 1 ? 's' : '' }}</p>
+        </div>
+        <div class="group-action">
+          <i class="fas fa-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="groups.length === 0">
+      <i class="fas fa-folder-open"></i>
+      <p>No groups yet. Create your first group to get started!</p>
+    </div>
+  </div>
+
+  <!-- Main Content Area (Right Side) -->
+  <div class="main-content">
+    <router-outlet></router-outlet>
   </div>
 </div>

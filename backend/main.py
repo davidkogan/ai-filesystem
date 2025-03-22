@@ -63,31 +63,135 @@ async def upload_file(
     file: UploadFile = File(...),
     group_ids: List[int] = Form(...)
 ):
-    file_bytes = await file.read()
-    size_kb = round(len(file_bytes) / 1024, 2)
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    text = ""
-    if file.filename.endswith(".pdf"):
+    try:
+        file_bytes = await file.read()
+        size_kb = round(len(file_bytes) / 1024, 2)
+
+        text = ""
         doc = fitz.open(stream=file_bytes, filetype="pdf")
         for page in doc:
             text += page.get_text()
         doc.close()
 
+        db = SessionLocal()
+        
+        # Check if file already exists
+        existing_doc = db.query(Document).filter(Document.filename == file.filename).first()
+        if existing_doc:
+            db.close()
+            raise HTTPException(
+                status_code=400, 
+                detail=f"A file named '{file.filename}' already exists"
+            )
+        
+        # Get groups and validate they exist
+        groups = db.query(Group).filter(Group.id.in_(group_ids)).all()
+        if len(groups) != len(group_ids):
+            db.close()
+            raise HTTPException(status_code=400, detail="One or more group IDs are invalid")
+
+        doc_entry = Document(
+            filename=file.filename,
+            size_kb=size_kb,
+            text=text,
+            pdf_data=file_bytes,
+            groups=groups
+        )
+        db.add(doc_entry)
+        db.commit()
+        db.close()
+
+        return {
+            "filename": file.filename,
+            "size_kb": size_kb,
+            "status": "success"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 📤 Multiple files upload endpoint
+@app.post("/upload-multiple")
+async def upload_multiple_files(
+    files: List[UploadFile] = File(...),
+    group_ids: List[int] = Form(...)
+):
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
+
+    results = []
+    errors = []
+    
     db = SessionLocal()
+    
+    # Validate groups first
     groups = db.query(Group).filter(Group.id.in_(group_ids)).all()
+    if len(groups) != len(group_ids):
+        db.close()
+        raise HTTPException(status_code=400, detail="One or more group IDs are invalid")
+    
+    try:
+        for file in files:
+            try:
+                if not file.filename.endswith(".pdf"):
+                    errors.append({
+                        "filename": file.filename,
+                        "error": "Not a PDF file"
+                    })
+                    continue
 
-    doc_entry = Document(
-        filename=file.filename,
-        size_kb=size_kb,
-        text=text,
-        pdf_data=file_bytes,
-        groups=groups
-    )
-    db.add(doc_entry)
-    db.commit()
-    db.close()
+                # Check if file already exists
+                existing_doc = db.query(Document).filter(Document.filename == file.filename).first()
+                if existing_doc:
+                    errors.append({
+                        "filename": file.filename,
+                        "error": "File already exists"
+                    })
+                    continue
 
-    return {"filename": file.filename, "status": "stored in DB with groups"}
+                file_bytes = await file.read()
+                size_kb = round(len(file_bytes) / 1024, 2)
+
+                text = ""
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+                for page in doc:
+                    text += page.get_text()
+                doc.close()
+
+                doc_entry = Document(
+                    filename=file.filename,
+                    size_kb=size_kb,
+                    text=text,
+                    pdf_data=file_bytes,
+                    groups=groups
+                )
+                db.add(doc_entry)
+                
+                results.append({
+                    "filename": file.filename,
+                    "size_kb": size_kb,
+                    "status": "success"
+                })
+
+            except Exception as e:
+                errors.append({
+                    "filename": file.filename,
+                    "error": str(e)
+                })
+
+        # Commit all successful uploads
+        db.commit()
+        
+    finally:
+        db.close()
+
+    return {
+        "successful_uploads": results,
+        "errors": errors
+    }
 
 # 📄 List uploaded documents
 @app.get("/documents")

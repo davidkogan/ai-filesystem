@@ -1,52 +1,62 @@
 <div class="upload-card">
-  <h2>Upload Document</h2>
+  <h2>
+    <i class="fas fa-cloud-upload-alt"></i>
+    Upload Files
+  </h2>
 
   <div class="upload-box">
     <label class="upload-label">
-      Select File
-      <input type="file" (change)="onFileSelected($event)" hidden>
+      <i class="fas fa-file-upload"></i>
+      Select Files
+      <input
+        type="file"
+        multiple
+        (change)="onFileSelected($event)"
+        [disabled]="uploading"
+        style="display: none;"
+        #fileInput
+      />
     </label>
 
-    <button
-      class="upload-button"
-      [disabled]="!selectedFile || selectedGroupIds.length === 0"
-      (click)="uploadFile()"
+    <button 
+      class="upload-button" 
+      (click)="uploadFiles()" 
+      [disabled]="!selectedFiles.length || uploading"
     >
-      Upload
+      <i class="fas fa-upload"></i>
+      {{ uploading ? 'Uploading...' : 'Upload Files' }}
     </button>
   </div>
-  <div class="upload-helper" *ngIf="!selectedFile">
-    Please select a file to begin.
-  </div>
-  
-  <div class="upload-helper" *ngIf="selectedFile && selectedGroupIds.length === 0">
-    Please select or create a group to enable upload.
-  </div>
 
-  <!-- Show selected filename -->
-  <div class="selected-file" *ngIf="selectedFile">
-    Selected: {{ selectedFile.name }}
-  </div>
-
-  <!-- 👇 Only show group section after file is selected -->
-  <div class="group-select" *ngIf="selectedFile">
-    <label class="group-label">Select Group(s):</label>
-    <select [(ngModel)]="selectedGroupIds" multiple class="group-dropdown">
-      <option *ngFor="let group of groups" [value]="group.id">
-        {{ group.name }}
-      </option>
-    </select>
-  
-    <div class="group-create">
-      <input
-        type="text"
-        [(ngModel)]="newGroupName"
-        placeholder="Create new group..."
-      />
-      <button (click)="createGroup()">Add</button>
+  <!-- Selected Files List -->
+  <div class="selected-files" *ngIf="selectedFiles.length > 0">
+    <h3>Selected Files</h3>
+    <div class="file-list">
+      <div class="file-item" *ngFor="let file of selectedFiles">
+        <i class="fas fa-file-pdf"></i>
+        <span class="file-name">{{ file.name }}</span>
+        <span class="file-size">{{ formatFileSize(file.size) }}</span>
+        <button class="remove-file" (click)="removeFile(file)">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
-  </div>  
+  </div>
 
-  <!-- Upload message -->
-  <div class="upload-message" *ngIf="uploadMessage">{{ uploadMessage }}</div>
+  <!-- Upload Progress -->
+  <div class="upload-progress" *ngIf="uploading">
+    <div class="progress-bar">
+      <div 
+        class="progress-fill" 
+        [style.width.%]="getUploadProgress()"
+      ></div>
+    </div>
+    <span class="progress-text">{{ getUploadProgress() }}%</span>
+  </div>
+
+  <!-- Upload Message -->
+  <div class="upload-message" *ngIf="uploadMessage" [class.error]="uploadError">
+    <i [class]="uploadError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'"></i>
+    {{ uploadMessage }}
+  </div>
 </div>
