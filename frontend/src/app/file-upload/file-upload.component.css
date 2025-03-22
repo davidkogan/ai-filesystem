@@ -1,70 +1,140 @@
-.upload-container {
-  max-width: 500px;
-  margin: 40px auto;
+/* Card container */
+.upload-card {
+  background: #fff;
+  border-radius: 12px;
   padding: 2rem;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+/* Title */
+.upload-card h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
   text-align: center;
 }
 
-.upload-container h2 {
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-  color: #333;
-}
-
-/* 🔥 Add spacing between select + upload buttons */
-.form-actions {
+/* File select + upload button row */
+.upload-box {
   display: flex;
-  justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  justify-content: center;
   margin-bottom: 1rem;
 }
 
-.file-label {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-  background-color: #f1f1f1;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.file-label:hover {
-  background-color: #e0e0e0;
-}
-
-.file-label input[type="file"] {
-  display: none;
-}
-
-.filename {
-  margin-bottom: 1rem;
-  color: #333;
-  font-style: italic;
-}
-
-button {
+/* Select File button */
+.upload-label {
   background-color: #007bff;
-  color: #fff;
-  padding: 0.75rem 1.5rem;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+/* Upload button */
+.upload-button {
+  background-color: #28a745;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  transition: 0.2s ease-in-out;
 }
 
-button:hover {
-  background-color: #0056b3;
+.upload-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.message {
-  margin-top: 1.2rem;
+/* Selected file display */
+.selected-file {
+  text-align: center;
   font-style: italic;
-  color: #555;
+  margin-bottom: 1rem;
+  color: #444;
+}
+
+/* Upload helper messages */
+.upload-helper {
+  font-size: 0.9rem;
+  color: #888;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Group selection section */
+.group-select {
+  margin-top: 1.5rem;
+}
+
+.group-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+  text-align: left;
+  color: #333;
+}
+
+.group-dropdown {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background: #f9f9f9;
+}
+
+.group-dropdown:focus {
+  outline: none;
+  border-color: #6c63ff;
+  background: white;
+}
+
+/* Group creation row */
+.group-create {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.group-create input {
+  flex: 1;
+  padding: 0.45rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.group-create input:focus {
+  outline: none;
+  border-color: #6c63ff;
+}
+
+.group-create button {
+  padding: 0.45rem 0.9rem;
+  background: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.group-create button:hover {
+  background: #5549d1;
+}
+
+/* Upload result message */
+.upload-message {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-weight: bold;
+  color: #333;
 }

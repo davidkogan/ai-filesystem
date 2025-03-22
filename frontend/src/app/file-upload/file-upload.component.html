@@ -1,18 +1,52 @@
-<div class="upload-container">
-  <h2>Upload a PDF</h2>
+<div class="upload-card">
+  <h2>Upload Document</h2>
 
-  <div class="form-actions">
-    <label class="file-label">
-      <input type="file" (change)="onFileSelected($event)" />
-      <span>Select File</span>
+  <div class="upload-box">
+    <label class="upload-label">
+      Select File
+      <input type="file" (change)="onFileSelected($event)" hidden>
     </label>
 
-    <button (click)="uploadFile()">Upload</button>
+    <button
+      class="upload-button"
+      [disabled]="!selectedFile || selectedGroupIds.length === 0"
+      (click)="uploadFile()"
+    >
+      Upload
+    </button>
+  </div>
+  <div class="upload-helper" *ngIf="!selectedFile">
+    Please select a file to begin.
+  </div>
+  
+  <div class="upload-helper" *ngIf="selectedFile && selectedGroupIds.length === 0">
+    Please select or create a group to enable upload.
   </div>
 
-  <div *ngIf="selectedFile" class="filename">
+  <!-- Show selected filename -->
+  <div class="selected-file" *ngIf="selectedFile">
     Selected: {{ selectedFile.name }}
   </div>
 
-  <p class="message">{{ uploadMessage }}</p>
+  <!-- 👇 Only show group section after file is selected -->
+  <div class="group-select" *ngIf="selectedFile">
+    <label class="group-label">Select Group(s):</label>
+    <select [(ngModel)]="selectedGroupIds" multiple class="group-dropdown">
+      <option *ngFor="let group of groups" [value]="group.id">
+        {{ group.name }}
+      </option>
+    </select>
+  
+    <div class="group-create">
+      <input
+        type="text"
+        [(ngModel)]="newGroupName"
+        placeholder="Create new group..."
+      />
+      <button (click)="createGroup()">Add</button>
+    </div>
+  </div>  
+
+  <!-- Upload message -->
+  <div class="upload-message" *ngIf="uploadMessage">{{ uploadMessage }}</div>
 </div>

@@ -1,0 +1,25 @@
+.group-detail-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+  
+  .doc-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  
+  .doc-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+  }
+  
+  .doc-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }  

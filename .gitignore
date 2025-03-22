@@ -1,1 +1,28 @@
-node_modules
+# Node
+node_modules/
+dist/
+.angular/
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.egg-info/
+.env
+venv/
+py3/
+.mypy_cache/
+pytest_cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE stuff
+.vscode/
+.idea/

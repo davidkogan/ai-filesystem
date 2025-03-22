@@ -1,0 +1,16 @@
+<div class="group-detail-container">
+    <h2>Group: {{ groupName }}</h2>
+  
+    <div class="doc-list">
+      <div
+        class="doc-card"
+        *ngFor="let doc of documents"
+        (click)="openDoc(doc.filename)"
+      >
+        <h4>{{ doc.filename }}</h4>
+        <p>{{ doc.size_kb }} KB</p>
+        <p><small>{{ doc.uploaded_at | date:'short' }}</small></p>
+      </div>
+    </div>
+  </div>
+  

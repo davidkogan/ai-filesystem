@@ -1,11 +1,14 @@
-<app-file-upload (fileUploaded)="loadDocuments()"></app-file-upload>
+<app-file-upload (fileUploaded)="loadGroups()"></app-file-upload>
 
-<h2>Uploaded Documents</h2>
+<h2 style="text-align: center;">Document Groups</h2>
 
-<p *ngIf="documents.length === 0">No documents found.</p>
-
-<ul>
-  <li *ngFor="let doc of documents">
-    <a [routerLink]="['/read', doc.filename]">{{ doc.filename }}</a> — {{ doc.size_kb }} KB
-  </li>
-</ul>
+<div class="group-grid">
+  <div
+    class="group-card"
+    *ngFor="let group of groups"
+    [routerLink]="['/group', group.id]"
+  >
+    <h3>{{ group.name }}</h3>
+    <p>{{ group.documents.length }} document{{ group.documents.length !== 1 ? 's' : '' }}</p>
+  </div>
+</div>

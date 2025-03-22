@@ -1,10 +1,18 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
-import os
-import fitz  # PyMuPDF
+from fastapi.responses import PlainTextResponse
+import fitz
+from db import Document, init_db, SessionLocal
+from fastapi.responses import Response
+from pydantic import BaseModel
+from db import Document, Group, init_db, SessionLocal
+from typing import List
+from fastapi import Form
 
 app = FastAPI()
+
+# ✅ Initialize DB (create tables if not already created)
+init_db()
 
 # 🔐 Allow Angular frontend to access the backend
 app.add_middleware(
@@ -15,67 +23,130 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 📁 Directory to store uploaded PDFs and extracted text
-UPLOAD_DIR = "uploaded_files"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 # ✅ Health check
 @app.get("/ping")
 def ping():
     return {"message": "Backend is up!"}
 
+@app.get("/groups")
+def list_groups():
+    db = SessionLocal()
+    groups = db.query(Group).all()
+    db.close()
+
+    return [{"id": g.id, "name": g.name} for g in groups]
+
+
+class GroupCreate(BaseModel):
+    name: str
+
+@app.post("/groups")
+def create_group(group: GroupCreate):
+    db = SessionLocal()
+    existing = db.query(Group).filter(Group.name == group.name).first()
+    if existing:
+        db.close()
+        raise HTTPException(status_code=400, detail="Group already exists")
+
+    new_group = Group(name=group.name)
+    db.add(new_group)
+    db.commit()
+    db.refresh(new_group)
+    db.close()
+    return {"id": new_group.id, "name": new_group.name}
+
 # 📤 Upload endpoint
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    file_location = os.path.join(UPLOAD_DIR, file.filename)
+async def upload_file(
+    file: UploadFile = File(...),
+    group_ids: List[int] = Form(...)
+):
+    file_bytes = await file.read()
+    size_kb = round(len(file_bytes) / 1024, 2)
 
-    with open(file_location, "wb") as f:
-        f.write(await file.read())
-
-    # 📄 Extract text using PyMuPDF
     text = ""
     if file.filename.endswith(".pdf"):
-        doc = fitz.open(file_location)
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
         for page in doc:
             text += page.get_text()
         doc.close()
 
-        # 📝 Save extracted text to .txt
-        with open(file_location + ".txt", "w") as out:
-            out.write(text)
+    db = SessionLocal()
+    groups = db.query(Group).filter(Group.id.in_(group_ids)).all()
 
-    return {
-        "filename": file.filename,
-        "status": "uploaded and processed"
-    }
+    doc_entry = Document(
+        filename=file.filename,
+        size_kb=size_kb,
+        text=text,
+        pdf_data=file_bytes,
+        groups=groups
+    )
+    db.add(doc_entry)
+    db.commit()
+    db.close()
+
+    return {"filename": file.filename, "status": "stored in DB with groups"}
 
 # 📄 List uploaded documents
 @app.get("/documents")
 def list_documents():
-    files = []
-    for fname in os.listdir(UPLOAD_DIR):
-        if fname.endswith(".pdf"):
-            path = os.path.join(UPLOAD_DIR, fname)
-            files.append({
-                "filename": fname,
-                "size_kb": round(os.path.getsize(path) / 1024, 2)
-            })
-    return JSONResponse(content={"documents": files})
+    db = SessionLocal()
+    docs = db.query(Document).all()
+    db.close()
+
+    return {
+        "documents": [
+            {
+                "filename": d.filename,
+                "size_kb": d.size_kb,
+                "uploaded_at": d.uploaded_at.isoformat()
+            }
+            for d in docs
+        ]
+    }
+
+@app.get("/groups-with-documents")
+def get_groups_with_documents():
+    db = SessionLocal()
+    groups = db.query(Group).all()
+    result = []
+
+    for group in groups:
+        result.append({
+            "id": group.id,
+            "name": group.name,
+            "documents": [
+                {
+                    "filename": doc.filename,
+                    "size_kb": doc.size_kb,
+                    "uploaded_at": doc.uploaded_at.isoformat()
+                }
+                for doc in group.documents
+            ]
+        })
+
+    db.close()
+    return result
 
 # 📖 Serve actual PDF for viewing
-@app.get("/file/{filename}")
-def get_pdf_file(filename: str):
-    path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path, media_type='application/pdf')
-
-# 📃 (Optional) Serve extracted plain text for future AI use
 @app.get("/document/{filename}")
 def get_document_text(filename: str):
-    txt_path = os.path.join(UPLOAD_DIR, filename + ".txt")
-    if not os.path.exists(txt_path):
-        raise HTTPException(status_code=404, detail="Text file not found")
-    with open(txt_path, "r") as f:
-        text = f.read()
-    return PlainTextResponse(content=text)
+    db = SessionLocal()
+    doc = db.query(Document).filter(Document.filename == filename).first()
+    db.close()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return PlainTextResponse(content=doc.text or "")
+
+@app.get("/file/{filename}")
+def serve_pdf_from_db(filename: str):
+    db = SessionLocal()
+    doc = db.query(Document).filter(Document.filename == filename).first()
+    db.close()
+
+    if not doc or not doc.pdf_data:
+        raise HTTPException(status_code=404, detail="PDF not found")
+
+    return Response(content=doc.pdf_data, media_type="application/pdf")
