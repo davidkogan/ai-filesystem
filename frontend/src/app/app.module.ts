@@ -7,6 +7,7 @@ import { DocumentReaderComponent } from './document-reader/document-reader.compo
 import { AppRoutingModule } from './app-routing.module';
 import { FormsModule } from '@angular/forms';
 import { GroupDetailComponent } from './group-detail/group-detail.component';
+import { LoginComponent } from './login/login.component';
 
 @NgModule({
   declarations: [
@@ -14,7 +15,8 @@ import { GroupDetailComponent } from './group-detail/group-detail.component';
     FileUploadComponent,
     DocumentListComponent,
     DocumentReaderComponent,
-    GroupDetailComponent
+    GroupDetailComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,

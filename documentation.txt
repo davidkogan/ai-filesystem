@@ -1,0 +1,179 @@
+# AI Filesystem Application Documentation
+
+## Overview
+The AI Filesystem Application is a full-stack web application designed to provide an intelligent and interactive filesystem for organizing and exploring documents (e.g., PDFs, eBooks). It allows users to upload, group, and view documents, with plans for future AI-powered search capabilities.
+
+### Tech Stack
+- **Frontend**: Angular (15+)
+- **Backend**: FastAPI (Python)
+- **Database**: SQLite (via SQLAlchemy ORM)
+- **Client-Side Communication**: Axios for HTTP requests
+
+---
+
+## Primary Features
+1. **Document Upload**:
+   - Users can upload PDF documents.
+   - Documents can be associated with one or more groups (tags or folders).
+   - Extracts text from PDFs using the `PyMuPDF` library for future AI-based search.
+
+2. **Group Management**:
+   - Users can create groups to organize documents.
+   - Groups are displayed in a dashboard with their associated documents.
+
+3. **Document Viewing**:
+   - Users can view individual PDFs in a clean reader view.
+
+4. **Authentication**:
+   - Basic authentication using plain text credentials (currently no hashing or database storage).
+
+---
+
+## Architecture
+
+### Frontend
+The frontend is a Single Page Application (SPA) built with Angular. It communicates with the backend via RESTful APIs.
+
+#### Key Components
+1. **`DocumentListComponent`**:
+   - Displays a list of groups and their associated documents.
+   - Fetches data from the `/groups-with-documents` endpoint.
+   - Updates dynamically when new groups or documents are added.
+
+2. **`FileUploadComponent`**:
+   - Provides a form for uploading files and associating them with groups.
+   - Allows users to create new groups during the upload process.
+
+3. **`GroupDetailComponent`**:
+   - Displays the details of a specific group, including its documents.
+   - Allows navigation to the document reader.
+
+4. **`DocumentReaderComponent`**:
+   - Displays a PDF document in an iframe for in-browser viewing.
+   - Fetches the PDF from the backend using the `/file/{filename}` endpoint.
+
+5. **`LoginComponent`**:
+   - Provides a login form for user authentication.
+   - Sends credentials to the backend `/token` endpoint to retrieve an access token.
+
+#### Routing
+Defined in `AppRoutingModule`:
+- `/`: Displays the document list (protected by authentication).
+- `/login`: Displays the login form.
+- `/group/:id`: Displays the details of a specific group.
+- `/read/:filename`: Opens a document in the reader.
+
+#### State Management
+A shared service (`GroupService`) is used to manage state and trigger UI updates:
+- `triggerRefresh()`: Called after uploads or group creation.
+- `refresh$`: Subscribed to by components to refresh data dynamically.
+
+---
+
+### Backend
+The backend is a FastAPI application that provides RESTful endpoints for managing documents, groups, and authentication.
+
+#### Key Endpoints
+1. **Authentication**:
+   - `POST /token`: Authenticates users and returns a JWT (currently using plain text credentials).
+
+2. **Group Management**:
+   - `GET /groups`: Lists all groups.
+   - `POST /groups`: Creates a new group.
+
+3. **Document Management**:
+   - `POST /upload`: Uploads a document, extracts text, and associates it with groups.
+   - `GET /documents`: Lists all uploaded documents.
+   - `GET /groups-with-documents`: Returns groups along with their associated documents.
+   - `GET /document/{filename}`: Returns the extracted text of a document.
+   - `GET /file/{filename}`: Serves the PDF file for viewing.
+
+#### Authentication Logic
+- **`auth.py`**:
+  - Contains a `fake_users_db` dictionary for storing plain text credentials.
+  - Provides functions for user authentication (`authenticate_user`) and token generation (`create_access_token`).
+
+#### Database
+- **SQLite** is used as the database, with SQLAlchemy as the ORM.
+- **Data Models**:
+  - **Document**:
+    - `id`: Primary key.
+    - `filename`: Name of the uploaded file.
+    - `size_kb`: File size in kilobytes.
+    - `text`: Extracted text from the PDF.
+    - `pdf_data`: Binary data of the PDF.
+    - `uploaded_at`: Timestamp of upload.
+    - `groups`: Many-to-many relationship with `Group`.
+  - **Group**:
+    - `id`: Primary key.
+    - `name`: Unique name of the group.
+    - `documents`: Many-to-many relationship with `Document`.
+
+---
+
+## How It Works
+
+### Frontend Flow
+1. **Login**:
+   - Users enter their credentials in the `LoginComponent`.
+   - The credentials are sent to the `/token` endpoint to retrieve an access token.
+   - The token is stored in `localStorage` for subsequent requests.
+
+2. **Document Upload**:
+   - Users select a file and associate it with one or more groups in the `FileUploadComponent`.
+   - The file is sent to the `/upload` endpoint, where it is stored in the database, and text is extracted.
+
+3. **Group Dashboard**:
+   - The `DocumentListComponent` fetches groups and their associated documents from the `/groups-with-documents` endpoint.
+   - Clicking a group navigates to the `GroupDetailComponent`.
+
+4. **Document Viewing**:
+   - Clicking a document in the group detail view opens it in the `DocumentReaderComponent`.
+   - The PDF is fetched from the `/file/{filename}` endpoint and displayed in an iframe.
+
+---
+
+## Current Limitations
+1. **Authentication**:
+   - Uses plain text credentials stored in memory (`fake_users_db`).
+   - No user registration or database-backed user management.
+
+2. **AI Features**:
+   - AI-powered search is not yet implemented.
+   - No OCR for image-based PDFs.
+
+3. **File Management**:
+   - No support for deleting or renaming documents.
+   - No versioning or preview thumbnails.
+
+4. **Scalability**:
+   - SQLite is used as the database, which may not scale well for large datasets.
+
+---
+
+## Planned Features
+1. **Authentication Enhancements**:
+   - Add hashed password storage.
+   - Implement user registration and role-based access control.
+
+2. **AI-Powered Search**:
+   - Use NLP models to enable semantic search across documents.
+
+3. **File Management**:
+   - Add support for deleting, renaming, and versioning documents.
+   - Generate preview thumbnails for documents.
+
+4. **Cloud Integration**:
+   - Store files in cloud storage (e.g., AWS S3, Google Cloud Storage).
+
+5. **Scalability**:
+   - Migrate to a more robust database (e.g., PostgreSQL).
+
+---
+
+## How to Run the Application
+
+### Backend
+1. Navigate to the `backend` directory:
+   ```bash
+   cd /Users/david/ai-filesystem/backend

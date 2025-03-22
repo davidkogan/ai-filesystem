@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 import fitz
@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from db import Document, Group, init_db, SessionLocal
 from typing import List
 from fastapi import Form
+from fastapi.security import OAuth2PasswordRequestForm
+from auth import authenticate_user, create_access_token, get_current_user
 
 app = FastAPI()
 
@@ -150,3 +152,15 @@ def serve_pdf_from_db(filename: str):
         raise HTTPException(status_code=404, detail="PDF not found")
 
     return Response(content=doc.pdf_data, media_type="application/pdf")
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    access_token = create_access_token(data={"sub": form_data.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/protected-route")
+async def protected_route(current_user: dict = Depends(get_current_user)):
+    return {"message": f"Hello, {current_user['username']}!"}
