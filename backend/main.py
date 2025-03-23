@@ -117,7 +117,7 @@ async def upload_file(
 @app.post("/upload-multiple")
 async def upload_multiple_files(
     files: List[UploadFile] = File(...),
-    group_ids: List[int] = Form(...)
+    group_ids: str = Form(...)
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
@@ -127,9 +127,16 @@ async def upload_multiple_files(
     
     db = SessionLocal()
     
-    # Validate groups first
-    groups = db.query(Group).filter(Group.id.in_(group_ids)).all()
-    if len(groups) != len(group_ids):
+    # Convert group_ids string to list
+    try:
+        group_id = int(group_ids)
+        group_ids_list = [group_id]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid group ID format")
+    
+    # Validate groups
+    groups = db.query(Group).filter(Group.id.in_(group_ids_list)).all()
+    if len(groups) != len(group_ids_list):
         db.close()
         raise HTTPException(status_code=400, detail="One or more group IDs are invalid")
     

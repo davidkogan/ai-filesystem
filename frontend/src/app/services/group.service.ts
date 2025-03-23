@@ -1,43 +1,65 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import axios from 'axios';
+import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+
+export interface Group {
+  id: number;
+  name: string;
+  documents: Document[];
+}
+
+export interface Document {
+  filename: string;
+  size_kb: number;
+  uploaded_at: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class GroupService {
-  private refreshTrigger = new BehaviorSubject<void>(undefined);
-  refresh$ = this.refreshTrigger.asObservable();
+  private refreshSubject = new Subject<void>();
+  private apiUrl = 'http://127.0.0.1:8000';
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
+
+  getRefreshObservable() {
+    return this.refreshSubject.asObservable();
+  }
 
   triggerRefresh() {
-    this.refreshTrigger.next();
+    this.refreshSubject.next();
   }
 
-  async getGroups() {
-    try {
-      const response = await axios.get('http://127.0.0.1:8000/groups-with-documents');
-      console.log('API Response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-      throw error;
+  async getGroups(): Promise<Group[]> {
+    const response = await fetch(`${this.apiUrl}/groups`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch groups');
     }
+    return response.json();
   }
 
-  async createGroup(name: string) {
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/groups', {
-        name: name.trim()
-      });
-      this.triggerRefresh();
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        throw new Error('A group with this name already exists');
-      }
-      throw error;
+  async getGroupsWithDocuments(): Promise<Group[]> {
+    const response = await fetch(`${this.apiUrl}/groups-with-documents`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch groups with documents');
     }
+    return response.json();
+  }
+
+  async createGroup(name: string): Promise<Group> {
+    const response = await fetch(`${this.apiUrl}/groups`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create group');
+    }
+
+    return response.json();
   }
 } 

@@ -1,20 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GroupService } from '../services/group.service';
+import { GroupService, Group, Document } from '../services/group.service';
 import { Subscription } from 'rxjs';
-
-interface Group {
-  id: number;
-  name: string;
-  documents: Document[];
-}
-
-interface Document {
-  id: number;
-  filename: string;
-  size_kb: number;
-  uploaded_at: string;
-}
+import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-group-detail',
@@ -23,6 +11,9 @@ interface Document {
 })
 export class GroupDetailComponent implements OnInit, OnDestroy {
   currentGroup: Group | null = null;
+  group: Group | null = null;
+  selectedDocument: Document | null = null;
+  showPdfModal = false;
   private refreshSubscription: Subscription;
 
   constructor(
@@ -30,18 +21,34 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     private router: Router,
     private groupService: GroupService
   ) {
-    this.refreshSubscription = this.groupService.refresh$.subscribe(() => {
-      this.loadGroupData();
-    });
+    this.refreshSubscription = this.groupService.getRefreshObservable()
+      .subscribe(() => {
+        if (this.currentGroup) {
+          this.loadGroup(this.currentGroup.id);
+        }
+      });
   }
 
   ngOnInit() {
-    this.loadGroupData();
+    this.route.params.subscribe(params => {
+      const groupId = +params['id'];
+      this.loadGroup(groupId);
+    });
   }
 
   ngOnDestroy() {
     if (this.refreshSubscription) {
       this.refreshSubscription.unsubscribe();
+    }
+  }
+
+  private async loadGroup(groupId: number) {
+    try {
+      const groups = await this.groupService.getGroupsWithDocuments();
+      this.currentGroup = groups.find((g: Group) => g.id === groupId) || null;
+      this.group = this.currentGroup;
+    } catch (error) {
+      console.error('Error loading group:', error);
     }
   }
 
@@ -96,48 +103,13 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  async openDocument(doc: Document) {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/file/${encodeURIComponent(doc.filename)}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      console.log('Response content type:', contentType);
-      
-      if (!contentType || !contentType.includes('application/pdf')) {
-        console.warn('Unexpected content type:', contentType);
-      }
+  openDocument(document: Document) {
+    const url = `http://127.0.0.1:8000/file/${encodeURIComponent(document.filename)}`;
+    window.open(url, '_blank');
+  }
 
-      const blob = await response.blob();
-      console.log('Blob size:', blob.size, 'bytes');
-      console.log('Blob type:', blob.type);
-
-      if (blob.size === 0) {
-        throw new Error('Received empty PDF file');
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const newWindow = window.open(url, '_blank');
-      
-      if (!newWindow) {
-        console.error('Popup was blocked or failed to open');
-        // Fallback: try to download the file instead
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = doc.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      // Clean up the blob URL after a delay to ensure it's loaded
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-    } catch (error) {
-      console.error('Error opening document:', error);
-      alert('Failed to open the document. Please try again.');
-    }
+  closeModal() {
+    this.showPdfModal = false;
+    this.selectedDocument = null;
   }
 }
