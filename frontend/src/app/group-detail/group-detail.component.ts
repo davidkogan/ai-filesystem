@@ -25,6 +25,8 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   selectedDocument: DocumentWithRename | null = null;
   showPdfModal = false;
   showRenameModal = false;
+  showDeleteModal = false;
+  documentToDelete: DocumentWithRename | null = null;
   newDocumentName = '';
   error: string | null = null;
   private refreshSubscription: Subscription;
@@ -150,6 +152,42 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
       this.groupService.triggerRefresh();
     } catch (error) {
       console.error('Error renaming document:', error);
+      // You might want to show an error message to the user here
+    }
+  }
+
+  confirmDelete(event: Event, document: DocumentWithRename) {
+    event.stopPropagation();
+    this.documentToDelete = document;
+    this.showDeleteModal = true;
+  }
+
+  cancelDelete() {
+    this.documentToDelete = null;
+    this.showDeleteModal = false;
+  }
+
+  async deleteDocument() {
+    if (!this.documentToDelete) return;
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/documents/${encodeURIComponent(this.documentToDelete.filename)}`,
+        {
+          method: 'DELETE'
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to delete document');
+      }
+
+      this.showDeleteModal = false;
+      this.documentToDelete = null;
+      this.groupService.triggerRefresh();
+    } catch (error) {
+      console.error('Error deleting document:', error);
       // You might want to show an error message to the user here
     }
   }

@@ -36,9 +36,14 @@
         <div class="document-info">
           <div class="document-name" *ngIf="!doc.isRenaming">
             <h3>{{ doc.filename }}</h3>
-            <button class="rename-btn" (click)="startRename($event, doc)">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
+            <div class="document-actions">
+              <button class="rename-btn" (click)="$event.stopPropagation(); startRename($event, doc)" title="Rename">
+                <i class="fas fa-pencil-alt"></i>
+              </button>
+              <button class="delete-btn" (click)="$event.stopPropagation(); confirmDelete($event, doc)" title="Delete">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
           </div>
           <div class="rename-form" *ngIf="doc.isRenaming">
             <input
@@ -50,10 +55,10 @@
               (click)="$event.stopPropagation()"
             >
             <div class="rename-actions">
-              <button (click)="finishRename(doc, renameInput.value); $event.stopPropagation()">
+              <button (click)="finishRename(doc, renameInput.value); $event.stopPropagation()" title="Save">
                 <i class="fas fa-check"></i>
               </button>
-              <button (click)="cancelRename(doc); $event.stopPropagation()">
+              <button (click)="cancelRename(doc); $event.stopPropagation()" title="Cancel">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -74,6 +79,26 @@
   <div class="empty-state" *ngIf="currentGroup.documents.length === 0">
     <i class="fas fa-file-upload"></i>
     <p>No documents yet. Upload your first document to get started!</p>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" *ngIf="showDeleteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <i class="fas fa-exclamation-triangle"></i>
+          Confirm Delete
+        </h2>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete "<strong>{{ documentToDelete?.filename }}</strong>"?</p>
+        <p class="warning">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="cancelDelete()">Cancel</button>
+        <button class="delete-btn" (click)="deleteDocument()">Delete</button>
+      </div>
+    </div>
   </div>
 </div>
   

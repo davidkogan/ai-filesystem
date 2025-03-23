@@ -302,3 +302,18 @@ async def rename_document(filename: str, rename_request: RenameRequest):
         return {"message": "Document renamed successfully"}
     finally:
         db.close()
+
+@app.delete("/documents/{filename}")
+async def delete_document(filename: str):
+    db = SessionLocal()
+    try:
+        document = db.query(Document).filter(Document.filename == filename).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+            
+        db.delete(document)
+        db.commit()
+        
+        return {"message": "Document deleted successfully"}
+    finally:
+        db.close()
