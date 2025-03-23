@@ -1,4 +1,4 @@
-import { NgModule, NO_ERRORS_SCHEMA, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
@@ -10,7 +10,6 @@ import { DocumentReaderComponent } from './document-reader/document-reader.compo
 import { AppRoutingModule } from './app-routing.module';
 import { GroupDetailComponent } from './group-detail/group-detail.component';
 import { LoginComponent } from './login/login.component';
-import { PdfViewerComponent } from './pdf-viewer/pdf-viewer.component';
 import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
 
 @NgModule({
@@ -21,7 +20,6 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
     DocumentReaderComponent,
     GroupDetailComponent,
     LoginComponent,
-    PdfViewerComponent,
     BreadcrumbComponent
   ],
   imports: [
@@ -32,7 +30,6 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
     HttpClientModule
   ],
   providers: [],
-  bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
+  bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -62,4 +62,20 @@ export class GroupService {
 
     return response.json();
   }
+
+  async renameDocument(oldFilename: string, newFilename: string): Promise<void> {
+    const response = await fetch(`${this.apiUrl}/documents/${encodeURIComponent(oldFilename)}/rename`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ new_filename: newFilename }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to rename document');
+    }
+
+    this.triggerRefresh();
+  }
 } 

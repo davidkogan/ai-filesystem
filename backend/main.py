@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 import fitz
@@ -275,3 +275,30 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/protected-route")
 async def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": f"Hello, {current_user['username']}!"}
+
+class RenameRequest(BaseModel):
+    new_filename: str
+
+@app.put("/documents/{filename}/rename")
+async def rename_document(filename: str, rename_request: RenameRequest):
+    if not rename_request.new_filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="New filename must end with .pdf")
+        
+    db = SessionLocal()
+    try:
+        # Check if new filename already exists
+        existing = db.query(Document).filter(Document.filename == rename_request.new_filename).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="A document with this name already exists")
+            
+        # Find and update the document
+        document = db.query(Document).filter(Document.filename == filename).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+            
+        document.filename = rename_request.new_filename
+        db.commit()
+        
+        return {"message": "Document renamed successfully"}
+    finally:
+        db.close()

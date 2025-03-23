@@ -1,8 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GroupService, Group, Document } from '../services/group.service';
+import { GroupService, Document } from '../services/group.service';
 import { Subscription } from 'rxjs';
 import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
+
+interface DocumentWithRename extends Document {
+  isRenaming?: boolean;
+}
+
+interface Group {
+  id: number;
+  name: string;
+  documents: DocumentWithRename[];
+}
 
 @Component({
   selector: 'app-group-detail',
@@ -12,8 +22,11 @@ import { BreadcrumbItem } from '../breadcrumb/breadcrumb.component';
 export class GroupDetailComponent implements OnInit, OnDestroy {
   currentGroup: Group | null = null;
   group: Group | null = null;
-  selectedDocument: Document | null = null;
+  selectedDocument: DocumentWithRename | null = null;
   showPdfModal = false;
+  showRenameModal = false;
+  newDocumentName = '';
+  error: string | null = null;
   private refreshSubscription: Subscription;
 
   constructor(
@@ -85,6 +98,62 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  openDocument(document: DocumentWithRename) {
+    const url = `http://127.0.0.1:8000/file/${encodeURIComponent(document.filename)}`;
+    window.open(url, '_blank');
+  }
+
+  startRename(event: Event, document: DocumentWithRename) {
+    event.stopPropagation();
+    document.isRenaming = true;
+  }
+
+  cancelRename(document: DocumentWithRename) {
+    document.isRenaming = false;
+  }
+
+  getFileNameWithoutExtension(filename: string): string {
+    return filename.replace(/\.pdf$/i, '');
+  }
+
+  async finishRename(document: DocumentWithRename, newName: string) {
+    if (!newName.trim()) {
+      document.isRenaming = false;
+      return;
+    }
+
+    const newFilename = `${newName.trim()}.pdf`;
+    if (newFilename === document.filename) {
+      document.isRenaming = false;
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/documents/${encodeURIComponent(document.filename)}/rename`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ new_filename: newFilename }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to rename document');
+      }
+
+      document.filename = newFilename;
+      document.isRenaming = false;
+      this.groupService.triggerRefresh();
+    } catch (error) {
+      console.error('Error renaming document:', error);
+      // You might want to show an error message to the user here
+    }
+  }
+
   formatFileSize(sizeKb: number): string {
     if (sizeKb >= 1024) {
       return `${(sizeKb / 1024).toFixed(2)} MB`;
@@ -103,13 +172,34 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  openDocument(document: Document) {
-    const url = `http://127.0.0.1:8000/file/${encodeURIComponent(document.filename)}`;
-    window.open(url, '_blank');
-  }
-
   closeModal() {
     this.showPdfModal = false;
     this.selectedDocument = null;
+  }
+
+  openRenameModal(document: DocumentWithRename) {
+    this.selectedDocument = document;
+    this.newDocumentName = document.filename;
+    this.showRenameModal = true;
+    this.error = null;
+  }
+
+  closeRenameModal() {
+    this.showRenameModal = false;
+    this.selectedDocument = null;
+    this.newDocumentName = '';
+    this.error = null;
+  }
+
+  async renameDocument() {
+    if (!this.selectedDocument || !this.newDocumentName.trim()) return;
+
+    try {
+      await this.groupService.renameDocument(this.selectedDocument.filename, this.newDocumentName.trim());
+      this.closeRenameModal();
+    } catch (error) {
+      console.error('Error renaming document:', error);
+      this.error = error instanceof Error ? error.message : 'Failed to rename document';
+    }
   }
 }

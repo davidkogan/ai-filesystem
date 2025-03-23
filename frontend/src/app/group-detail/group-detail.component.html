@@ -1,6 +1,6 @@
 <app-breadcrumb [items]="[
   { label: 'Groups', link: '/' },
-  { label: group?.name || 'Loading...' }
+  { label: currentGroup?.name || 'Loading...', link: '' }
 ]"></app-breadcrumb>
 
 <div class="group-detail-container" *ngIf="currentGroup">
@@ -34,7 +34,30 @@
           <i class="fas fa-file-pdf"></i>
         </div>
         <div class="document-info">
-          <h3>{{ doc.filename }}</h3>
+          <div class="document-name" *ngIf="!doc.isRenaming">
+            <h3>{{ doc.filename }}</h3>
+            <button class="rename-btn" (click)="startRename($event, doc)">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+          </div>
+          <div class="rename-form" *ngIf="doc.isRenaming">
+            <input
+              #renameInput
+              type="text"
+              [value]="getFileNameWithoutExtension(doc.filename)"
+              (keyup.enter)="finishRename(doc, renameInput.value)"
+              (keyup.escape)="cancelRename(doc)"
+              (click)="$event.stopPropagation()"
+            >
+            <div class="rename-actions">
+              <button (click)="finishRename(doc, renameInput.value); $event.stopPropagation()">
+                <i class="fas fa-check"></i>
+              </button>
+              <button (click)="cancelRename(doc); $event.stopPropagation()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
           <div class="document-meta">
             <span class="document-size">{{ formatFileSize(doc.size_kb) }}</span>
             <span class="document-date">{{ formatDate(doc.uploaded_at) }}</span>
