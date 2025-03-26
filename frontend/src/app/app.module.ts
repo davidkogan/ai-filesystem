@@ -3,9 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 import { AppComponent } from './app.component';
 import { FileUploadComponent } from './file-upload/file-upload.component';
-import { DocumentListComponent } from './document-list/document-list.component';
+import { GroupListComponent } from './group-list/group-list.component';
 import { DocumentReaderComponent } from './document-reader/document-reader.component';
 import { AppRoutingModule } from './app-routing.module';
 import { GroupDetailComponent } from './group-detail/group-detail.component';
@@ -16,7 +17,7 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
   declarations: [
     AppComponent,
     FileUploadComponent,
-    DocumentListComponent,
+    GroupListComponent,
     DocumentReaderComponent,
     GroupDetailComponent,
     LoginComponent,
@@ -30,6 +31,7 @@ import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
     HttpClientModule
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
 })
 export class AppModule { }
